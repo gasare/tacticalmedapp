@@ -35,7 +35,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final totalPatients = _patients.length;
     final criticalPatients = _patients.where((p) => p.severity == 'Critical').length;
+    final moderatePatients = _patients.where((p) => p.severity == 'Moderate').length;
+    final minorPatients = _patients.where((p) => p.severity == 'Minor').length;
     final criticalList = _patients.where((p) => p.severity == 'Critical').toList();
+
+    // Chart Data
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final last7Days = List.generate(7, (index) => today.subtract(Duration(days: 6 - index)));
+    
+    final countsPerDay = List.generate(7, (index) {
+      final targetDate = last7Days[index];
+      return _patients.where((p) {
+        final regDate = DateTime(p.registeredAt.year, p.registeredAt.month, p.registeredAt.day);
+        return regDate.isAtSameMomentAs(targetDate);
+      }).length;
+    });
+
+    final maxCount = countsPerDay.isEmpty ? 10 : countsPerDay.reduce((a, b) => a > b ? a : b);
+    final chartMaxY = (maxCount < 10 ? 10 : maxCount).toDouble();
 
     return Scaffold(
       appBar: AppBar(
@@ -91,6 +109,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: StatCard(
+                      title: 'Moderate',
+                      value: moderatePatients.toString(),
+                      icon: Icons.warning_amber_rounded,
+                      color: Colors.orange,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: StatCard(
+                      title: 'Minor',
+                      value: minorPatients.toString(),
+                      icon: Icons.healing,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 32),
               Text('Patient Load', style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 16),
@@ -104,7 +144,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     child: BarChart(
                       BarChartData(
                         alignment: BarChartAlignment.spaceAround,
-                        maxY: (totalPatients < 10 ? 10 : totalPatients).toDouble(),
+                        maxY: chartMaxY,
                         barTouchData: BarTouchData(enabled: false),
                         titlesData: FlTitlesData(
                           show: true,
@@ -113,36 +153,36 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               showTitles: true,
                               getTitlesWidget: (double value, TitleMeta meta) {
                                 const style = TextStyle(fontWeight: FontWeight.bold, fontSize: 12);
-                                String text;
-                                switch (value.toInt()) {
-                                  case 0: text = 'Mon'; break;
-                                  case 1: text = 'Tue'; break;
-                                  case 2: text = 'Wed'; break;
-                                  case 3: text = 'Thu'; break;
-                                  case 4: text = 'Fri'; break;
-                                  case 5: text = 'Sat'; break;
-                                  case 6: text = 'Sun'; break;
-                                  default: text = ''; break;
-                                }
+                                final int index = value.toInt();
+                                if (index < 0 || index >= 7) return const SizedBox.shrink();
+                                
+                                final date = last7Days[index];
+                                final isToday = index == 6; // last element is today
+                                final text = isToday ? 'Today' : DateFormat('E').format(date);
+                                
                                 return SideTitleWidget(axisSide: meta.axisSide, child: Text(text, style: style));
                               },
                             ),
                           ),
-                          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         ),
-                        gridData: const FlGridData(show: false),
+                        gridData: FlGridData(show: false),
                         borderData: FlBorderData(show: false),
-                        barGroups: [
-                          BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: totalPatients > 0 ? (totalPatients % 3).toDouble() : 0, color: Theme.of(context).colorScheme.primary)]),
-                          BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: totalPatients > 0 ? (totalPatients % 2).toDouble() : 0, color: Theme.of(context).colorScheme.primary)]),
-                          BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: 0, color: Theme.of(context).colorScheme.primary)]),
-                          BarChartGroupData(x: 3, barRods: [BarChartRodData(toY: 0, color: Theme.of(context).colorScheme.primary)]),
-                          BarChartGroupData(x: 4, barRods: [BarChartRodData(toY: 0, color: Theme.of(context).colorScheme.primary)]),
-                          BarChartGroupData(x: 5, barRods: [BarChartRodData(toY: 0, color: Theme.of(context).colorScheme.primary)]),
-                          BarChartGroupData(x: 6, barRods: [BarChartRodData(toY: totalPatients.toDouble(), color: Theme.of(context).colorScheme.primary)]),
-                        ],
+                        barGroups: List.generate(7, (index) {
+                          return BarChartGroupData(
+                            x: index,
+                            barRods: [
+                              BarChartRodData(
+                                toY: countsPerDay[index].toDouble(),
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 16,
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                              ),
+                            ],
+                          );
+                        }),
                       ),
                     ),
                   ),
@@ -155,21 +195,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
               const SizedBox(height: 8),
               if (criticalList.isEmpty)
-                Card(child: ListTile(title: Text('No critical patients currently.', style: Theme.of(context).textTheme.bodyMedium))),
-              ...criticalList.map((p) => Card(
-                color: Theme.of(context).colorScheme.error.withOpacity(0.1),
-                elevation: 0,
-                child: ListTile(
-                  leading: Icon(Icons.emergency, color: Theme.of(context).colorScheme.error),
-                  title: Text('${p.name} - ${p.gender}, ${p.age}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(p.injuries),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    await context.push('/patient/${p.id}');
-                    _loadData();
-                  },
-                ),
-              )).toList(),
+                Card(child: ListTile(title: Text('No critical patients currently.', style: Theme.of(context).textTheme.bodyMedium)))
+              else
+                ...criticalList.map((p) => Card(
+                  color: Theme.of(context).colorScheme.error.withOpacity(0.1),
+                  elevation: 0,
+                  child: ListTile(
+                    leading: Icon(Icons.emergency, color: Theme.of(context).colorScheme.error),
+                    title: Text('${p.name} - ${p.gender}, ${p.age}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(p.injuries),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      await context.push('/patient/${p.id}');
+                      _loadData();
+                    },
+                  ),
+                )),
               const SizedBox(height: 32),
               Text('Recent Patients', style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 8),
