@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../domain/patient_model.dart';
 import '../../cases/domain/case_model.dart';
 import '../../../core/storage/hive_service.dart';
+import '../data/pdf_service.dart';
 
 class PatientDetailScreen extends ConsumerStatefulWidget {
   final String patientId;
@@ -12,7 +13,8 @@ class PatientDetailScreen extends ConsumerStatefulWidget {
   const PatientDetailScreen({super.key, required this.patientId});
 
   @override
-  ConsumerState<PatientDetailScreen> createState() => _PatientDetailScreenState();
+  ConsumerState<PatientDetailScreen> createState() =>
+      _PatientDetailScreenState();
 }
 
 class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
@@ -51,7 +53,12 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
             children: [
               DropdownButtonFormField<String>(
                 value: noteType,
-                items: ['Observation', 'Medication', 'Surgery', 'Discharge Note']
+                items: [
+                  'Observation',
+                  'Medication',
+                  'Surgery',
+                  'Discharge Note'
+                ]
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                     .toList(),
                 onChanged: (val) => noteType = val!,
@@ -108,6 +115,15 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
         title: Text(_patient!.name),
         actions: [
           IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Share PDF Report',
+            onPressed: () async {
+              if (_patient != null) {
+                await PdfService.generateAndSharePatientReport(_patient!);
+              }
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {},
           )
@@ -126,20 +142,32 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Severity: ${_patient!.severity}', style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: _patient!.severity == 'Critical' ? Colors.red : (_patient!.severity == 'Moderate' ? Colors.orange : Colors.green),
-                        )),
-                        Text('Age: ${_patient!.age} | ${_patient!.gender}'),
+                        Text('Severity: ${_patient!.severity}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(
+                                  color: _patient!.severity == 'Critical'
+                                      ? Colors.red
+                                      : (_patient!.severity == 'Moderate'
+                                          ? Colors.orange
+                                          : Colors.green),
+                                )),
+                        Text('Age: ${_patient!.age} | ${_patient!.gender}${_patient!.unit != null && _patient!.unit!.isNotEmpty ? ' | Unit: ${_patient!.unit}' : ''}'),
                       ],
                     ),
                     const Divider(height: 32),
-                    Text('Injuries', style: Theme.of(context).textTheme.titleLarge),
+                    Text('Injuries',
+                        style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 8),
                     Text(_patient!.injuries),
                     const SizedBox(height: 16),
-                    Text('Medical History', style: Theme.of(context).textTheme.titleLarge),
+                    Text('Medical History',
+                        style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 8),
-                    Text(_patient!.medicalHistory.isEmpty ? 'None provided' : _patient!.medicalHistory),
+                    Text(_patient!.medicalHistory.isEmpty
+                        ? 'None provided'
+                        : _patient!.medicalHistory),
                   ],
                 ),
               ),
@@ -147,11 +175,13 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Timeline & Records', style: Theme.of(context).textTheme.headlineMedium),
+                  Text('Timeline & Records',
+                      style: Theme.of(context).textTheme.headlineMedium),
                   TextButton.icon(
                     onPressed: _addCaseRecord,
                     icon: const Icon(Icons.add),
@@ -173,14 +203,22 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                     (context, index) {
                       final c = _cases[index];
                       return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: Theme.of(context).colorScheme.secondary.withOpacity(0.2),
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .secondary
+                                .withOpacity(0.2),
                             child: Icon(
-                              c.noteType == 'Medication' ? Icons.medical_services :
-                              c.noteType == 'Surgery' ? Icons.health_and_safety :
-                              c.noteType == 'Discharge Note' ? Icons.exit_to_app : Icons.assignment,
+                              c.noteType == 'Medication'
+                                  ? Icons.medical_services
+                                  : c.noteType == 'Surgery'
+                                      ? Icons.health_and_safety
+                                      : c.noteType == 'Discharge Note'
+                                          ? Icons.exit_to_app
+                                          : Icons.assignment,
                               color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
@@ -191,7 +229,10 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                               const SizedBox(height: 4),
                               Text(c.description),
                               const SizedBox(height: 8),
-                              Text(DateFormat('MMM dd, yyyy - HH:mm').format(c.timestamp), style: Theme.of(context).textTheme.bodySmall),
+                              Text(
+                                  DateFormat('MMM dd, yyyy - HH:mm')
+                                      .format(c.timestamp),
+                                  style: Theme.of(context).textTheme.bodySmall),
                             ],
                           ),
                           isThreeLine: true,

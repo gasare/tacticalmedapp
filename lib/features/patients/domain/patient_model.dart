@@ -34,6 +34,12 @@ class Patient {
   @HiveField(9)
   final String severity;
 
+  @HiveField(10)
+  final String? unit;
+
+  @HiveField(11)
+  final String? base64WoundPhoto;
+
   Patient({
     required this.id,
     required this.name,
@@ -45,5 +51,7 @@ class Patient {
     required this.medicalHistory,
     required this.registeredAt,
     required this.severity,
+    this.unit,
+    this.base64WoundPhoto,
   });
 }

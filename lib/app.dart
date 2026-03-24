@@ -11,7 +11,7 @@ class TcomApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'TCOM Patient Tracker',
+      title: 'Med+',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,
