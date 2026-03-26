@@ -287,7 +287,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ))
                   .toList(),
-              const SizedBox(height: 80),
+              const SizedBox(height: 40),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 40.0),
+                  child: Text(
+                    '© Twirwaneho Technologies',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
