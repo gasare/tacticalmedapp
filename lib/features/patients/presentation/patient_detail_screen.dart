@@ -52,7 +52,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                value: noteType,
+                initialValue: noteType,
                 items: [
                   'Observation',
                   'Medication',
@@ -153,7 +153,8 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                                           ? Colors.orange
                                           : Colors.green),
                                 )),
-                        Text('Age: ${_patient!.age} | ${_patient!.gender}${_patient!.unit != null && _patient!.unit!.isNotEmpty ? ' | Unit: ${_patient!.unit}' : ''}'),
+                        Text(
+                            'Age: ${_patient!.age} | ${_patient!.gender}${_patient!.unit != null && _patient!.unit!.isNotEmpty ? ' | Unit: ${_patient!.unit}' : ''}'),
                       ],
                     ),
                     const Divider(height: 32),
@@ -210,7 +211,7 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                             backgroundColor: Theme.of(context)
                                 .colorScheme
                                 .secondary
-                                .withOpacity(0.2),
+                                .withValues(alpha: 0.2),
                             child: Icon(
                               c.noteType == 'Medication'
                                   ? Icons.medical_services

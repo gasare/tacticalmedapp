@@ -24,7 +24,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   String _gender = 'Male';
   String _severity = 'Minor';
-  
+
   String? _photoBase64;
   String? _woundPhotoBase64;
 
@@ -79,7 +79,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Patient registered securely offline')),
+            const SnackBar(
+                content: Text('Patient registered securely offline')),
           );
           context.go('/dashboard'); // Return distinctly to dashboard
         }
@@ -106,9 +107,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             height: 120,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.2)),
+              border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.2)),
             ),
             child: currentBase64 != null
                 ? ClipRRect(
@@ -122,9 +128,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.camera_alt, size: 32, color: Theme.of(context).colorScheme.primary),
+                      Icon(Icons.camera_alt,
+                          size: 32,
+                          color: Theme.of(context).colorScheme.primary),
                       const SizedBox(height: 8),
-                      Text('Tap to Capture', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12)),
+                      Text('Tap to Capture',
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontSize: 12)),
                     ],
                   ),
           ),
@@ -134,11 +145,16 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               onPressed: () => setState(() {
-                if (isWound) _woundPhotoBase64 = null; else _photoBase64 = null;
+                if (isWound) {
+                  _woundPhotoBase64 = null;
+                } else {
+                  _photoBase64 = null;
+                }
               }),
               icon: const Icon(Icons.delete, size: 16),
               label: const Text('Remove', style: TextStyle(fontSize: 12)),
-              style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+              style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error),
             ),
           ),
       ],
@@ -148,7 +164,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       appBar: AppBar(title: const Text('Register Patient')),
       body: SingleChildScrollView(
@@ -163,14 +179,18 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    Expanded(child: _buildImagePicker('Patient Photo', _photoBase64, false)),
+                    Expanded(
+                        child: _buildImagePicker(
+                            'Patient Photo', _photoBase64, false)),
                     const SizedBox(width: 16),
-                    Expanded(child: _buildImagePicker('Wound Photo', _woundPhotoBase64, true)),
+                    Expanded(
+                        child: _buildImagePicker(
+                            'Wound Photo', _woundPhotoBase64, true)),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Basic Info Section
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -178,19 +198,32 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.2)),
+                    side: BorderSide(
+                        color:
+                            theme.colorScheme.primary.withValues(alpha: 0.2)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Basic Information', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                        Text('Basic Information',
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _nameController,
-                          decoration: InputDecoration(labelText: 'Full Name', prefixIcon: const Icon(Icons.person), filled: true, fillColor: theme.colorScheme.primary.withOpacity(0.05), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
-                          validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                          decoration: InputDecoration(
+                              labelText: 'Full Name',
+                              prefixIcon: const Icon(Icons.person),
+                              filled: true,
+                              fillColor: theme.colorScheme.primary
+                                  .withValues(alpha: 0.05),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none)),
+                          validator: (val) =>
+                              val == null || val.isEmpty ? 'Required' : null,
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -199,17 +232,39 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                               child: TextFormField(
                                 controller: _ageController,
                                 keyboardType: TextInputType.number,
-                                decoration: InputDecoration(labelText: 'Age', prefixIcon: const Icon(Icons.calendar_today), filled: true, fillColor: theme.colorScheme.primary.withOpacity(0.05), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
-                                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                                decoration: InputDecoration(
+                                    labelText: 'Age',
+                                    prefixIcon:
+                                        const Icon(Icons.calendar_today),
+                                    filled: true,
+                                    fillColor: theme.colorScheme.primary
+                                        .withValues(alpha: 0.05),
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide.none)),
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Required'
+                                    : null,
                               ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: DropdownButtonFormField<String>(
-                                value: _gender,
-                                decoration: InputDecoration(labelText: 'Gender', filled: true, fillColor: theme.colorScheme.primary.withOpacity(0.05), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
-                                items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
-                                onChanged: (val) => setState(() => _gender = val!),
+                                initialValue: _gender,
+                                decoration: InputDecoration(
+                                    labelText: 'Gender',
+                                    filled: true,
+                                    fillColor: theme.colorScheme.primary
+                                        .withValues(alpha: 0.05),
+                                    border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide.none)),
+                                items: ['Male', 'Female']
+                                    .map((g) => DropdownMenuItem(
+                                        value: g, child: Text(g)))
+                                    .toList(),
+                                onChanged: (val) =>
+                                    setState(() => _gender = val!),
                               ),
                             ),
                           ],
@@ -217,8 +272,17 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _unitController,
-                          decoration: InputDecoration(labelText: 'Military Unit / Division', prefixIcon: const Icon(Icons.shield), filled: true, fillColor: theme.colorScheme.primary.withOpacity(0.05), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
-                          validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                          decoration: InputDecoration(
+                              labelText: 'Military Unit / Division',
+                              prefixIcon: const Icon(Icons.shield),
+                              filled: true,
+                              fillColor: theme.colorScheme.primary
+                                  .withValues(alpha: 0.05),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none)),
+                          validator: (val) =>
+                              val == null || val.isEmpty ? 'Required' : null,
                         ),
                       ],
                     ),
@@ -226,7 +290,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Clinical Details Section
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -234,33 +298,65 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.2)),
+                    side: BorderSide(
+                        color:
+                            theme.colorScheme.primary.withValues(alpha: 0.2)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Clinical Details', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                        Text('Clinical Details',
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: _severity,
-                          decoration: InputDecoration(labelText: 'Initial Severity', prefixIcon: const Icon(Icons.warning), filled: true, fillColor: theme.colorScheme.primary.withOpacity(0.05), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
-                          items: ['Minor', 'Moderate', 'Critical'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                          initialValue: _severity,
+                          decoration: InputDecoration(
+                              labelText: 'Initial Severity',
+                              prefixIcon: const Icon(Icons.warning),
+                              filled: true,
+                              fillColor: theme.colorScheme.primary
+                                  .withValues(alpha: 0.05),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none)),
+                          items: ['Minor', 'Moderate', 'Critical']
+                              .map((s) =>
+                                  DropdownMenuItem(value: s, child: Text(s)))
+                              .toList(),
                           onChanged: (val) => setState(() => _severity = val!),
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _injuriesController,
                           maxLines: 3,
-                          decoration: InputDecoration(labelText: 'Injuries Description', alignLabelWithHint: true, filled: true, fillColor: theme.colorScheme.primary.withOpacity(0.05), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
-                          validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                          decoration: InputDecoration(
+                              labelText: 'Injuries Description',
+                              alignLabelWithHint: true,
+                              filled: true,
+                              fillColor: theme.colorScheme.primary
+                                  .withValues(alpha: 0.05),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none)),
+                          validator: (val) =>
+                              val == null || val.isEmpty ? 'Required' : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _historyController,
                           maxLines: 2,
-                          decoration: InputDecoration(labelText: 'Medical History (Optional)', alignLabelWithHint: true, filled: true, fillColor: theme.colorScheme.primary.withOpacity(0.05), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
+                          decoration: InputDecoration(
+                              labelText: 'Medical History (Optional)',
+                              alignLabelWithHint: true,
+                              filled: true,
+                              fillColor: theme.colorScheme.primary
+                                  .withValues(alpha: 0.05),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none)),
                         ),
                       ],
                     ),
@@ -268,7 +364,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Save Button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -277,10 +373,13 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   icon: const Icon(Icons.save),
                   label: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16.0),
-                    child: Text('Save', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: Text('Save',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                   style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),

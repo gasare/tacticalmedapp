@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/services.dart';
+
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -18,7 +18,8 @@ class PdfService {
     }
 
     pw.ImageProvider? woundImage;
-    if (patient.base64WoundPhoto != null && patient.base64WoundPhoto!.isNotEmpty) {
+    if (patient.base64WoundPhoto != null &&
+        patient.base64WoundPhoto!.isNotEmpty) {
       final woundBytes = base64Decode(patient.base64WoundPhoto!);
       woundImage = pw.MemoryImage(woundBytes);
     }
@@ -34,49 +35,75 @@ class PdfService {
               child: pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('TCOM Patient Medical Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                  pw.Text('Date: ${patient.registeredAt.year}-${patient.registeredAt.month.toString().padLeft(2, '0')}-${patient.registeredAt.day.toString().padLeft(2, '0')}', style: pw.TextStyle(color: PdfColors.grey700)),
+                  pw.Text('TCOM Patient Medical Report',
+                      style: pw.TextStyle(
+                          fontSize: 24,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blue900)),
+                  pw.Text(
+                      'Date: ${patient.registeredAt.year}-${patient.registeredAt.month.toString().padLeft(2, '0')}-${patient.registeredAt.day.toString().padLeft(2, '0')}',
+                      style: const pw.TextStyle(color: PdfColors.grey700)),
                 ],
               ),
             ),
             pw.SizedBox(height: 20),
-            
+
             // Basic Info
             pw.Container(
               padding: const pw.EdgeInsets.all(12),
-              decoration: pw.BoxDecoration(color: PdfColors.grey100, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8))),
+              decoration: const pw.BoxDecoration(
+                  color: PdfColors.grey100,
+                  borderRadius: pw.BorderRadius.all(pw.Radius.circular(8))),
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text('PATIENT INFORMATION', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14, color: PdfColors.blue800)),
+                  pw.Text('PATIENT INFORMATION',
+                      style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                          color: PdfColors.blue800)),
                   pw.Divider(color: PdfColors.grey400),
                   pw.SizedBox(height: 8),
                   _buildDetailRow('Name:', patient.name),
                   _buildDetailRow('Age:', patient.age.toString()),
                   _buildDetailRow('Gender:', patient.gender),
-                  if (patient.unit != null && patient.unit!.isNotEmpty) _buildDetailRow('Unit:', patient.unit!),
+                  if (patient.unit != null && patient.unit!.isNotEmpty)
+                    _buildDetailRow('Unit:', patient.unit!),
                 ],
               ),
             ),
             pw.SizedBox(height: 16),
-            
+
             // Clinical Info
             pw.Container(
               padding: const pw.EdgeInsets.all(12),
-              decoration: pw.BoxDecoration(color: PdfColors.grey100, borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8))),
+              decoration: const pw.BoxDecoration(
+                  color: PdfColors.grey100,
+                  borderRadius: pw.BorderRadius.all(pw.Radius.circular(8))),
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text('CLINICAL DETAILS', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14, color: PdfColors.blue800)),
+                  pw.Text('CLINICAL DETAILS',
+                      style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 14,
+                          color: PdfColors.blue800)),
                   pw.Divider(color: PdfColors.grey400),
                   pw.SizedBox(height: 8),
                   _buildDetailRow('Initial Severity:', patient.severity),
                   _buildDetailRow('Injuries:', patient.injuries),
-                  _buildDetailRow('Medical History:', patient.medicalHistory.isEmpty ? 'None' : patient.medicalHistory),
+                  _buildDetailRow(
+                      'Medical History:',
+                      patient.medicalHistory.isEmpty
+                          ? 'None'
+                          : patient.medicalHistory),
+                  if (patient.gpsLocation != null &&
+                      patient.gpsLocation!.isNotEmpty)
+                    _buildDetailRow('Location:', patient.gpsLocation!),
                 ],
               ),
             ),
-            
+
             // Photos
             pw.SizedBox(height: 24),
             pw.Row(
@@ -86,26 +113,33 @@ class PdfService {
                   pw.Expanded(
                     child: pw.Column(
                       children: [
-                        pw.Text('Patient Photo', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text('Patient Photo',
+                            style:
+                                pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         pw.SizedBox(height: 8),
                         pw.Container(
                           height: 200,
-                          decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey)),
+                          decoration: pw.BoxDecoration(
+                              border: pw.Border.all(color: PdfColors.grey)),
                           child: pw.Image(profileImage, fit: pw.BoxFit.contain),
                         ),
                       ],
                     ),
                   ),
-                if (profileImage != null && woundImage != null) pw.SizedBox(width: 16),
+                if (profileImage != null && woundImage != null)
+                  pw.SizedBox(width: 16),
                 if (woundImage != null)
                   pw.Expanded(
                     child: pw.Column(
                       children: [
-                        pw.Text('Wound Detail', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text('Wound Detail',
+                            style:
+                                pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                         pw.SizedBox(height: 8),
                         pw.Container(
                           height: 200,
-                          decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey)),
+                          decoration: pw.BoxDecoration(
+                              border: pw.Border.all(color: PdfColors.grey)),
                           child: pw.Image(woundImage, fit: pw.BoxFit.contain),
                         ),
                       ],
@@ -113,10 +147,12 @@ class PdfService {
                   ),
               ],
             ),
-            
+
             pw.SizedBox(height: 40),
             pw.Center(
-              child: pw.Text('-- Confidential TCOM Record --', style: pw.TextStyle(color: PdfColors.grey500, fontSize: 10)),
+              child: pw.Text('-- Confidential TCOM Record --',
+                  style: const pw.TextStyle(
+                      color: PdfColors.grey500, fontSize: 10)),
             ),
           ];
         },
@@ -142,7 +178,12 @@ class PdfService {
       child: pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.SizedBox(width: 100, child: pw.Text(label, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.grey800))),
+          pw.SizedBox(
+              width: 100,
+              child: pw.Text(label,
+                  style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.grey800))),
           pw.Expanded(child: pw.Text(value)),
         ],
       ),

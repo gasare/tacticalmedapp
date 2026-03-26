@@ -157,7 +157,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       BarChartData(
                         alignment: BarChartAlignment.spaceAround,
                         maxY: chartMaxY,
-                        barTouchData: BarTouchData(enabled: false),
+                        barTouchData: const BarTouchData(enabled: false),
                         titlesData: FlTitlesData(
                           show: true,
                           bottomTitles: AxisTitles(
@@ -167,8 +167,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 const style = TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 12);
                                 final int index = value.toInt();
-                                if (index < 0 || index >= 7)
+                                if (index < 0 || index >= 7) {
                                   return const SizedBox.shrink();
+                                }
 
                                 final date = last7Days[index];
                                 final isToday =
@@ -178,19 +179,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     : DateFormat('E').format(date);
 
                                 return SideTitleWidget(
-                                    axisSide: meta.axisSide,
+                                    meta: meta,
                                     child: Text(text, style: style));
                               },
                             ),
                           ),
-                          leftTitles: AxisTitles(
+                          leftTitles: const AxisTitles(
                               sideTitles: SideTitles(showTitles: false)),
-                          topTitles: AxisTitles(
+                          topTitles: const AxisTitles(
                               sideTitles: SideTitles(showTitles: false)),
-                          rightTitles: AxisTitles(
+                          rightTitles: const AxisTitles(
                               sideTitles: SideTitles(showTitles: false)),
                         ),
-                        gridData: FlGridData(show: false),
+                        gridData: const FlGridData(show: false),
                         borderData: FlBorderData(show: false),
                         barGroups: List.generate(7, (index) {
                           return BarChartGroupData(
@@ -227,8 +228,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             style: Theme.of(context).textTheme.bodyMedium)))
               else
                 ...criticalList.map((p) => Card(
-                      color:
-                          Theme.of(context).colorScheme.error.withOpacity(0.1),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .error
+                          .withValues(alpha: 0.1),
                       elevation: 0,
                       child: ListTile(
                         leading: Icon(Icons.emergency,
@@ -260,7 +263,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             backgroundColor: Theme.of(context)
                                 .colorScheme
                                 .primary
-                                .withOpacity(0.1),
+                                .withValues(alpha: 0.1),
                             child: Icon(Icons.person,
                                 color: Theme.of(context).colorScheme.primary),
                           ),

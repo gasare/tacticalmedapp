@@ -47,7 +47,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
             hintText: 'Search by Name or ID...',
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
@@ -78,7 +78,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                       child: Icon(Icons.person, color: Theme.of(context).colorScheme.primary),
                     ),
                     title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600)),
