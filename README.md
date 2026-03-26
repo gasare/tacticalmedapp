@@ -1,16 +1,24 @@
-# tcom
+# Tactical Medical App (TCOM)
 
-A new Flutter project.
+A secure, offline-first Flutter mobile application for tracking war patients, complete with registration, digital case management, PDF reporting, and dashboard analytics.
 
-## Getting Started
+## 📱 Download the App
 
-This project is a starting point for a Flutter application.
+Download and install the latest Android version directly from GitHub:
 
-A few resources to get you started if this is your first Flutter project:
+[![Download APK](https://img.shields.io/badge/Download-Android_APK_(Modern)-brightgreen?style=for-the-badge&logo=android)](https://github.com/gasare/tacticalmedapp/raw/master/releases/tcom-arm64-v8a-release.apk)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+<details>
+<summary>Other Versions</summary>
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- [Older 32-bit Devices (armeabi-v7a)](https://github.com/gasare/tacticalmedapp/raw/master/releases/tcom-armeabi-v7a-release.apk)
+- [Emulators (x86_64)](https://github.com/gasare/tacticalmedapp/raw/master/releases/tcom-x86_64-release.apk)
+- [Universal Version (Fat APK)](https://github.com/gasare/tacticalmedapp/raw/master/releases/tcom-release.apk)
+</details>
+
+## 🚀 Features
+- 🏥 Patient Registration & Triage
+- 📊 Dashboard & Daily Analytics
+- 📄 Secure PDF Medical Report Generation
+- 🔒 Secure On-Device Storage
+- © Twirwaneho Technologies
