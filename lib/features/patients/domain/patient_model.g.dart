@@ -29,13 +29,14 @@ class PatientAdapter extends TypeAdapter<Patient> {
       severity: fields[9] as String,
       unit: fields[10] as String?,
       base64WoundPhoto: fields[11] as String?,
+      isSynced: fields[12] == null ? false : fields[12] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Patient obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -59,7 +60,9 @@ class PatientAdapter extends TypeAdapter<Patient> {
       ..writeByte(10)
       ..write(obj.unit)
       ..writeByte(11)
-      ..write(obj.base64WoundPhoto);
+      ..write(obj.base64WoundPhoto)
+      ..writeByte(12)
+      ..write(obj.isSynced);
   }
 
   @override

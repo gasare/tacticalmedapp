@@ -5,10 +5,16 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:hive/hive.dart';
+import '../../../core/storage/hive_service.dart';
+import '../../settings/domain/user_settings.dart';
 import '../domain/patient_model.dart';
 
 class PdfService {
   static Future<void> generateAndSharePatientReport(Patient patient) async {
+    final settingsBox = Hive.box(HiveService.settingsBoxName);
+    final UserSettings? medic = settingsBox.get('medic_profile');
+    
     final pdf = pw.Document();
 
     pw.ImageProvider? profileImage;
@@ -147,6 +153,27 @@ class PdfService {
                   ),
               ],
             ),
+
+            if (medic != null)
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(top: 30),
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Divider(color: PdfColors.grey400),
+                    pw.SizedBox(height: 8),
+                    pw.Text('ATTENDING MEDIC / PROVIDER', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12, color: PdfColors.blue800)),
+                    pw.SizedBox(height: 4),
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('${medic.rank} ${medic.providerName}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text('${medic.role} - ${medic.unit}', style: const pw.TextStyle(color: PdfColors.grey700)),
+                      ]
+                    )
+                  ]
+                )
+              ),
 
             pw.SizedBox(height: 40),
             pw.Center(

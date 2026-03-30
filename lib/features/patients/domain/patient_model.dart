@@ -40,6 +40,9 @@ class Patient {
   @HiveField(11)
   final String? base64WoundPhoto;
 
+  @HiveField(12, defaultValue: false)
+  final bool isSynced;
+
   Patient({
     required this.id,
     required this.name,
@@ -53,5 +56,6 @@ class Patient {
     required this.severity,
     this.unit,
     this.base64WoundPhoto,
+    this.isSynced = false,
   });
 }

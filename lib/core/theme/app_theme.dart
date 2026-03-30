@@ -1,63 +1,74 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color primaryBlue = Color(0xFF1E3A8A); // Trusted dark blue
-  static const Color secondaryBlue = Color(0xFF3B82F6); // Soft blue
-  static const Color criticalRed = Color(0xFFEF4444); // Critical alerts
-  static const Color warningYellow = Color(0xFFF59E0B);
-  static const Color stableGreen = Color(0xFF10B981);
-  static const Color backgroundLight = Color(0xFFF8FAFC);
+  static const Color primaryDark = Color(0xFF0F172A); // Slate 900
+  static const Color secondaryDark = Color(0xFF1E293B); // Slate 800
+  static const Color accentBlue = Color(0xFF3B82F6); // Blue 500
+  static const Color criticalRed = Color(0xFFDC2626); // Red 600
+  static const Color warningYellow = Color(0xFFD97706); // Amber 600
+  static const Color stableGreen = Color(0xFF059669); // Emerald 600
+  static const Color backgroundLight = Color(0xFFF1F5F9); // Slate 100
   static const Color surfaceWhite = Colors.white;
   static const Color textPrimary = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textSecondary = Color(0xFF475569);
 
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: const ColorScheme.light(
-        primary: primaryBlue,
-        secondary: secondaryBlue,
+        primary: primaryDark,
+        secondary: accentBlue,
         error: criticalRed,
         surface: surfaceWhite,
       ),
       scaffoldBackgroundColor: backgroundLight,
       textTheme: const TextTheme(
         displayLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.bold),
-        headlineMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
-        bodyLarge: TextStyle(color: textPrimary),
-        bodyMedium: TextStyle(color: textSecondary),
+        headlineMedium: TextStyle(color: textPrimary, fontWeight: FontWeight.w700, letterSpacing: -0.5),
+        titleLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
+        bodyLarge: TextStyle(color: textPrimary, fontSize: 16),
+        bodyMedium: TextStyle(color: textSecondary, fontSize: 14),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: primaryBlue,
+        backgroundColor: primaryDark,
         foregroundColor: Colors.white,
         centerTitle: true,
         elevation: 0,
+        titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, letterSpacing: 0.5),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlue,
+          backgroundColor: accentBlue,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceWhite,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
+        labelStyle: const TextStyle(color: textSecondary, fontWeight: FontWeight.w500),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: primaryBlue, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: accentBlue, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: criticalRed, width: 2),
         ),
       ),
     );

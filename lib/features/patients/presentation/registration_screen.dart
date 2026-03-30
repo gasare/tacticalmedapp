@@ -195,13 +195,6 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.2)),
-                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -295,13 +288,6 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.2)),
-                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -364,27 +350,22 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-
-              // Save Button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: FilledButton.icon(
-                  onPressed: _savePatient,
-                  icon: const Icon(Icons.save),
-                  label: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16.0),
-                    child: Text('Save',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: FilledButton.icon(
+            onPressed: _savePatient,
+            icon: const Icon(Icons.save),
+            label: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.0),
+              child: Text('SAVE PATIENT RECORD',
+                  style: TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+            ),
           ),
         ),
       ),

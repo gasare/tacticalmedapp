@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/dashboard/presentation/dashboard_screen.dart';
 import '../../features/patients/presentation/registration_screen.dart';
+import '../../features/admin/presentation/admin_screen.dart';
 import '../../features/patients/presentation/patient_detail_screen.dart';
 import '../../features/patients/presentation/search_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
 
 // Temporary placeholder screen
 class PlaceholderScreen extends StatelessWidget {
@@ -40,6 +42,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/search',
         builder: (context, state) => const SearchScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminScreen(),
       ),
       GoRoute(
         path: '/patient/:id',

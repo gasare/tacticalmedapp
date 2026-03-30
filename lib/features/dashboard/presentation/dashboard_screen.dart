@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'widgets/stat_card.dart';
 import '../../../core/storage/hive_service.dart';
+import '../../../core/network/sync_service.dart';
 import '../../patients/domain/patient_model.dart';
 import 'package:intl/intl.dart';
 
@@ -16,11 +19,29 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   List<Patient> _patients = [];
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _setupAutoSync();
+  }
+
+  void _setupAutoSync() {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) async {
+      final hasInternet = results.any((r) => r != ConnectivityResult.none);
+      if (hasInternet && _patients.any((p) => !p.isSynced)) {
+        await ref.read(syncServiceProvider).syncOfflinePatients();
+        if (mounted) _loadData();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
   }
 
   void _loadData() {
@@ -69,6 +90,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         title: const Text('Patients Dashboard'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () {
+              context.push('/settings');
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Center(
+              child: Badge(
+                isLabelVisible: _patients.any((p) => !p.isSynced),
+                label: Text('${_patients.where((p) => !p.isSynced).length}'),
+                child: Icon(
+                  _patients.any((p) => !p.isSynced) ? Icons.cloud_sync_outlined : Icons.cloud_done_outlined,
+                  color: _patients.any((p) => !p.isSynced) ? Colors.orange : Colors.green,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.search),
             tooltip: 'Search Patients',
             onPressed: () {
@@ -80,6 +121,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             tooltip: 'Register Patient',
             onPressed: () async {
               await context.push('/register');
+              if (!context.mounted) return;
               _loadData();
             },
           )
@@ -272,14 +314,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   const TextStyle(fontWeight: FontWeight.w600)),
                           subtitle: Text(
                               'Added ${DateFormat('MMMd HH:mm').format(p.registeredAt)}'),
-                          trailing: Text(p.severity,
-                              style: TextStyle(
-                                  color: p.severity == 'Critical'
-                                      ? Colors.red
-                                      : (p.severity == 'Moderate'
-                                          ? Colors.orange
-                                          : Colors.green),
-                                  fontWeight: FontWeight.bold)),
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(p.severity,
+                                  style: TextStyle(
+                                      color: p.severity == 'Critical'
+                                          ? Colors.red
+                                          : (p.severity == 'Moderate'
+                                              ? Colors.orange
+                                              : Colors.green),
+                                      fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 4),
+                              Icon(
+                                p.isSynced ? Icons.cloud_done : Icons.cloud_off,
+                                size: 16,
+                                color: p.isSynced ? Colors.blue : Colors.grey,
+                              ),
+                            ],
+                          ),
                           onTap: () async {
                             await context.push('/patient/${p.id}');
                             _loadData();

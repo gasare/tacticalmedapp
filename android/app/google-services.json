@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "519420465524",
+    "project_id": "tcom---tactical-medic",
+    "storage_bucket": "tcom---tactical-medic.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:519420465524:android:6b8e8c5d2ec6f882839c21",
+        "android_client_info": {
+          "package_name": "com.tcom.app.tcom"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD23DGRjtWYq03wbKeErG1ao-hAmsSCh_k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

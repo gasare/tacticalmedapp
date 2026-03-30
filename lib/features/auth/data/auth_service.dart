@@ -3,45 +3,87 @@ import 'package:local_auth/local_auth.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import '../../../core/storage/hive_service.dart';
+import '../domain/user_account.dart';
 
 class AuthService {
   final HiveService _hiveService;
   final LocalAuthentication _localAuth;
 
-  AuthService(this._hiveService, this._localAuth);
+  AuthService(this._hiveService, this._localAuth) {
+    _bootstrapAdmin();
+  }
 
-  // Use the authBox for quick PIN lookup
-  // In a real app, this could also sync with a backend later
-  Future<bool> registerPin(String pin) async {
-    final bytes = utf8.encode(pin);
-    final hashedPin = sha256.convert(bytes).toString();
-    await _hiveService.authBox.put('user_pin', hashedPin);
+  void _bootstrapAdmin() {
+    final box = _hiveService.accountsBox;
+    if (!box.containsKey('admin')) {
+      final bytes = utf8.encode('admin_password');
+      final hashedPin = sha256.convert(bytes).toString();
+      final adminAccount = UserAccount(
+        username: 'admin',
+        hashedPassword: hashedPin,
+        isAdmin: true,
+      );
+      box.put('admin', adminAccount);
+    }
+  }
+
+  String _hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    return sha256.convert(bytes).toString();
+  }
+
+  Future<bool> signUp(String username, String password, bool enableBiometrics) async {
+    final box = _hiveService.accountsBox;
+    if (box.containsKey(username)) return false; // Username taken
+
+    final account = UserAccount(
+      username: username,
+      hashedPassword: _hashPassword(password),
+      biometricsEnabled: enableBiometrics,
+    );
+    await box.put(username, account);
+    await _hiveService.authBox.put('last_logged_in_user', username);
     return true;
   }
 
-  Future<bool> verifyPin(String pin) async {
-    final storedHash = _hiveService.authBox.get('user_pin');
-    if (storedHash == null) return false;
-    final bytes = utf8.encode(pin);
-    final hashedPin = sha256.convert(bytes).toString();
-    return hashedPin == storedHash;
+  Future<bool> login(String username, String password) async {
+    final box = _hiveService.accountsBox;
+    final UserAccount? account = box.get(username);
+    
+    if (account == null) return false;
+
+    if (account.hashedPassword == _hashPassword(password)) {
+      await _hiveService.authBox.put('last_logged_in_user', username);
+      return true;
+    }
+    return false;
+  }
+  
+  UserAccount? getCurrentUser() {
+    final username = _hiveService.authBox.get('last_logged_in_user');
+    if (username == null) return null;
+    return _hiveService.accountsBox.get(username);
+  }
+  
+  Future<void> logout() async {
+    await _hiveService.authBox.delete('last_logged_in_user');
   }
 
-  Future<bool> hasRegisteredPin() async {
-    return _hiveService.authBox.containsKey('user_pin');
+  Future<bool> canUseBiometrics() async {
+    final user = getCurrentUser();
+    if (user == null || !user.biometricsEnabled) return false;
+    
+    final isAvailable = await _localAuth.canCheckBiometrics;
+    final isDeviceSupported = await _localAuth.isDeviceSupported();
+    return isAvailable && isDeviceSupported;
   }
 
   Future<bool> authenticateWithBiometrics() async {
-    final isAvailable = await _localAuth.canCheckBiometrics;
-    final isDeviceSupported = await _localAuth.isDeviceSupported();
-
-    if (!isAvailable || !isDeviceSupported) {
-      return false; // Fallback to PIN
-    }
+    if (!await canUseBiometrics()) return false;
 
     try {
       return await _localAuth.authenticate(
-        localizedReason: 'Please authenticate to access patient records',
+        localizedReason: 'Please authenticate to access TCOM patient records',
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: true,
