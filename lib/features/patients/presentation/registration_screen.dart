@@ -82,7 +82,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             const SnackBar(
                 content: Text('Patient registered securely offline')),
           );
-          context.go('/dashboard'); // Return distinctly to dashboard
+          context.go('/'); // Return distinctly to dashboard root
         }
       } catch (e) {
         if (mounted) {
@@ -167,8 +167,11 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Register Patient')),
-      body: SingleChildScrollView(
-        child: Form(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
+            child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -353,6 +356,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             ],
           ),
         ),
+      ),
+      ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(

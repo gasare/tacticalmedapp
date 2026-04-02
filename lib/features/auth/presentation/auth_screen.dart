@@ -73,6 +73,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       
       final success = await authService.signUp(username, password, _enableBiometrics);
       if (success && mounted) {
+        if (_enableBiometrics) {
+          final bioSuccess = await authService.authenticateWithBiometrics();
+          if (!bioSuccess && mounted) {
+            setState(() {
+              _errorMessage = 'Biometric scan failed or canceled. Please re-authenticate via Login.';
+              _isLoading = false;
+              _isLogin = true; 
+            });
+            return;
+          }
+        }
         context.go('/');
       } else {
         setState(() {

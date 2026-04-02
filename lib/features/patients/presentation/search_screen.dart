@@ -68,8 +68,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           )
         ],
       ),
-      body: _filteredPatients.isEmpty
-          ? const Center(child: Text('No matching patients found.'))
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: _filteredPatients.isEmpty
+              ? const Center(child: Text('No matching patients found.'))
           : ListView.builder(
               itemCount: _filteredPatients.length,
               itemBuilder: (context, index) {
@@ -95,6 +98,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 );
               },
             ),
+        ),
+      ),
     );
   }
 }

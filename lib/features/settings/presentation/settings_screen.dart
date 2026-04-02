@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/storage/hive_service.dart';
+import '../../auth/data/auth_service.dart';
 import '../domain/user_settings.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -26,6 +27,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _loadSettings() {
     final hiveService = ref.read(hiveServiceProvider);
+    final currentUser = ref.read(authServiceProvider).getCurrentUser();
+
     final box = hiveService.settingsBox;
     if (box.isNotEmpty) {
       final UserSettings? settings = box.get('medic_profile');
@@ -35,6 +38,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _unitController.text = settings.unit;
         _roleController.text = settings.role;
       }
+    }
+
+    // Default to the authentication username if no settings are saved
+    if (_nameController.text.isEmpty && currentUser != null) {
+      _nameController.text = currentUser.username;
     }
   }
 
@@ -157,6 +165,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onPressed: _saveSettings,
                 icon: const Icon(Icons.save),
                 label: const Text('SAVE IDENTITY'),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await ref.read(authServiceProvider).logout();
+                  if (context.mounted) {
+                    context.go('/auth');
+                  }
+                },
+                icon: const Icon(Icons.logout, color: Colors.red),
+                label: const Text('SECURE LOGOUT', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.red, width: 1.5),
+                ),
               ),
             ),
           ],
