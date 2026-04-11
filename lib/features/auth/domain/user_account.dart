@@ -16,10 +16,22 @@ class UserAccount {
   @HiveField(3)
   final bool biometricsEnabled;
 
+  @HiveField(4, defaultValue: '')
+  final String firstName;
+
+  @HiveField(5, defaultValue: '')
+  final String lastName;
+
+  @HiveField(6, defaultValue: '')
+  final String phoneNumber;
+
   UserAccount({
     required this.username,
     required this.hashedPassword,
     this.isAdmin = false,
     this.biometricsEnabled = false,
+    this.firstName = '',
+    this.lastName = '',
+    this.phoneNumber = '',
   });
 }

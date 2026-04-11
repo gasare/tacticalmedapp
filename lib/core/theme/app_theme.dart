@@ -97,4 +97,97 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get tacticalDarkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: const Color(0xFF000000), // Pure OLED black
+      colorScheme: const ColorScheme.dark(
+        primary: Color(0xFF8B0000), // Dark Red
+        secondary: Color(0xFF556B2F), // Muted Green
+        error: Color(0xFFFF5252),
+        surface: Color(0xFF121212), // Very dark grey for cards
+        // ignore: deprecated_member_use
+        background: Color(0xFF000000),
+      ),
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        headlineMedium: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, letterSpacing: -0.5),
+        titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        titleMedium: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        titleSmall: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+        bodyLarge: TextStyle(color: Colors.white, fontSize: 16),
+        bodyMedium: TextStyle(color: Colors.grey, fontSize: 14),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF000000),
+        foregroundColor: Color(0xFF8B0000),
+        centerTitle: true,
+        elevation: 0,
+        shape: Border(bottom: BorderSide(color: Color(0xFF8B0000), width: 1)),
+        titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, letterSpacing: 1.0, color: Color(0xFF8B0000)),
+        iconTheme: IconThemeData(color: Color(0xFF8B0000)),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF8B0000),
+          foregroundColor: Colors.white,
+          elevation: 2,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF8B0000),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      cardTheme: const CardThemeData(
+        color: Color(0xFF121212),
+        elevation: 2,
+        shadowColor: Color(0x66000000),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          side: BorderSide(color: Color(0xFF333333), width: 1),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFF1A1A1A),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        hintStyle: const TextStyle(color: Colors.grey),
+        labelStyle: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF333333)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF333333)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF8B0000), width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFFF5252), width: 1),
+        ),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: Color(0xFF000000),
+        selectedItemColor: Color(0xFF8B0000),
+        unselectedItemColor: Colors.grey,
+      ),
+    );
+  }
 }

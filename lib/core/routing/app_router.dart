@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/auth_screen.dart';
-import '../../features/dashboard/presentation/dashboard_screen.dart';
+import '../../features/dashboard/presentation/main_screen.dart';
 import '../../features/patients/presentation/registration_screen.dart';
+import '../../features/patients/presentation/qr_scanner_screen.dart';
 import '../../features/admin/presentation/admin_screen.dart';
 import '../../features/patients/presentation/patient_detail_screen.dart';
 import '../../features/patients/presentation/search_screen.dart';
@@ -29,7 +30,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/',
-        builder: (context, state) => const DashboardScreen(),
+        builder: (context, state) => const MainScreen(),
       ),
       GoRoute(
         path: '/auth',
@@ -41,7 +42,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/search',
-        builder: (context, state) => const SearchScreen(),
+        builder: (context, state) {
+          final filter = state.uri.queryParameters['filter'] ?? 'All';
+          return SearchScreen(initialFilter: filter);
+        },
+      ),
+      GoRoute(
+        path: '/scanner',
+        builder: (context, state) => const QrScannerScreen(),
       ),
       GoRoute(
         path: '/settings',

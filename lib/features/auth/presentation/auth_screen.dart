@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../data/auth_service.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
@@ -14,6 +15,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  
+  // New Fields
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _phoneController = TextEditingController();
   
   bool _isLogin = true;
   bool _isLoading = false;
@@ -51,11 +57,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (_isLogin) {
       final success = await authService.login(username, password);
       if (success && mounted) {
-        if (username.toLowerCase() == 'admin') {
-          context.go('/admin');
-        } else {
-          context.go('/');
-        }
+        context.go('/');
       } else {
         setState(() {
           _errorMessage = 'Invalid username or password.';
@@ -63,32 +65,125 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         });
       }
     } else {
-      if (username.toLowerCase() == 'admin') {
+      // Registration: Trigger Firebase SMS flow
+      await _verifyPhoneNumber();
+    }
+  }
+
+  Future<void> _verifyPhoneNumber() async {
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: _phoneController.text.trim(),
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          await _linkUser(credential);
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          if (mounted) {
+            setState(() { 
+              _errorMessage = e.message ?? 'SMS Verification failed'; 
+              _isLoading = false; 
+            });
+          }
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          if (mounted) {
+            setState(() => _isLoading = false);
+            _showOtpDialog(verificationId);
+          }
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {},
+      );
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _errorMessage = 'Cannot register as admin. Use login.';
+          _errorMessage = 'Failed to initiate phone verification. Check your phone number format (e.g. +1234567890).';
           _isLoading = false;
         });
-        return;
       }
-      
-      final success = await authService.signUp(username, password, _enableBiometrics);
+    }
+  }
+
+  void _showOtpDialog(String verificationId) {
+    final otpController = TextEditingController();
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enter SMS Verification Code'),
+        content: TextField(
+          controller: otpController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            hintText: '6-digit code',
+            prefixIcon: Icon(Icons.password),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() => _isLoading = false);
+            }, 
+            child: const Text('Cancel')
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              setState(() => _isLoading = true);
+              try {
+                final credential = PhoneAuthProvider.credential(
+                  verificationId: verificationId,
+                  smsCode: otpController.text.trim(),
+                );
+                await _linkUser(credential);
+              } catch (e) {
+                if (mounted) {
+                  setState(() { 
+                    _errorMessage = 'Invalid SMS Code provided.'; 
+                    _isLoading = false; 
+                  });
+                }
+              }
+            },
+            child: const Text('Verify'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _linkUser(PhoneAuthCredential credential) async {
+    try {
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      // Firebase success, register user in local Hive DB
+      final authService = ref.read(authServiceProvider);
+      final success = await authService.signUp(
+        _usernameController.text.trim(),
+        _passwordController.text,
+        _enableBiometrics,
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
+      );
       if (success && mounted) {
         if (_enableBiometrics) {
-          final bioSuccess = await authService.authenticateWithBiometrics();
-          if (!bioSuccess && mounted) {
-            setState(() {
-              _errorMessage = 'Biometric scan failed or canceled. Please re-authenticate via Login.';
-              _isLoading = false;
-              _isLogin = true; 
-            });
-            return;
-          }
+           await authService.authenticateWithBiometrics();
         }
+        if (!mounted) return;
         context.go('/');
       } else {
-        setState(() {
-          _errorMessage = 'Username already exists.';
-          _isLoading = false;
+        if (mounted) {
+          setState(() { 
+            _errorMessage = 'Username already taken or local registration failed.'; 
+            _isLoading = false; 
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() { 
+          _errorMessage = e.toString(); 
+          _isLoading = false; 
         });
       }
     }
@@ -98,6 +193,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -124,7 +222,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   Text(
                     _isLogin 
                         ? 'Enter your credentials to access patient records.'
-                        : 'Secure your offline data with a new account.',
+                        : 'Secure your offline data with a new verified account.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -145,11 +243,51 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     const SizedBox(height: 16),
                   ],
 
+                  if (!_isLogin) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _firstNameController,
+                            decoration: const InputDecoration(
+                              labelText: 'First Name',
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                            validator: (v) => v!.isEmpty ? 'Req' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _lastNameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Last Name',
+                            ),
+                            validator: (v) => v!.isEmpty ? 'Req' : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Phone Number (e.g. +1234567890)',
+                        prefixIcon: Icon(Icons.phone),
+                      ),
+                      validator: (v) => v!.isEmpty || !v.startsWith('+') 
+                          ? 'Valid Phone format (+xxx) required' 
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   TextFormField(
                     controller: _usernameController,
                     decoration: const InputDecoration(
                       labelText: 'Username',
-                      prefixIcon: Icon(Icons.person_outline),
+                      prefixIcon: Icon(Icons.badge_outlined),
                     ),
                     validator: (v) => v!.isEmpty ? 'Required' : null,
                   ),
@@ -167,14 +305,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   
                   if (!_isLogin) ...[
                     const SizedBox(height: 16),
-                    CheckboxListTile(
-                      title: const Text('Enable Fast Biometric Login'),
-                      value: _enableBiometrics,
-                      onChanged: (val) {
-                        setState(() => _enableBiometrics = val ?? true);
-                      },
-                      contentPadding: EdgeInsets.zero,
-                      controlAffinity: ListTileControlAffinity.leading,
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: CheckboxListTile(
+                        title: const Text('Register Fingerprint', style: TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: const Text('Capture biometrics for fast access.'),
+                        secondary: Icon(Icons.fingerprint, color: Theme.of(context).colorScheme.primary, size: 32),
+                        value: _enableBiometrics,
+                        onChanged: (val) {
+                          setState(() => _enableBiometrics = val ?? true);
+                        },
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      ),
                     ),
                   ],
                   
@@ -182,13 +327,48 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   
                   _isLoading 
                     ? const CircularProgressIndicator()
-                    : SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _submitForm,
-                          child: Text(_isLogin ? 'SECURE LOGIN' : 'CREATE ACCOUNT'),
-                        ),
+                    : Column(
+                        children: [
+                          if (_isLogin) ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 56,
+                                    child: ElevatedButton(
+                                      onPressed: _submitForm,
+                                      child: const Text('SECURE LOGIN'),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                SizedBox(
+                                  height: 56,
+                                  width: 56,
+                                  child: ElevatedButton(
+                                    onPressed: _checkBiometrics,
+                                    style: ElevatedButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                      foregroundColor: Theme.of(context).colorScheme.primary,
+                                      elevation: 0,
+                                    ),
+                                    child: const Icon(Icons.fingerprint, size: 32),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ] else ...[
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: ElevatedButton(
+                                onPressed: _submitForm,
+                                child: const Text('VERIFY & CREATE ACCOUNT'),
+                              ),
+                            ),
+                          ],
+                        ]
                       ),
                       
                   const SizedBox(height: 16),

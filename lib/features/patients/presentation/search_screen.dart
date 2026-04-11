@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/storage/hive_service.dart';
 import '../domain/patient_model.dart';
 import 'package:intl/intl.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
-  const SearchScreen({super.key});
+  final String initialFilter;
+  const SearchScreen({super.key, this.initialFilter = 'All'});
 
   @override
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
@@ -23,7 +25,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.initState();
     final hiveService = ref.read(hiveServiceProvider);
     _allPatients = hiveService.patientsBox.values.map((e) => e as Patient).toList();
-    _filteredPatients = List.from(_allPatients);
+    _severityFilter = widget.initialFilter;
+    _filter();
   }
 
   void _filter() {
@@ -88,14 +91,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     subtitle: Text('ID: ${p.id.substring(0, 8)}...\nAdded ${DateFormat('MMMd yyyy').format(p.registeredAt)}'),
                     isThreeLine: true,
                     trailing: Text(p.severity, style: TextStyle(
-                      color: p.severity == 'Critical' ? Colors.red : (p.severity == 'Moderate' ? Colors.orange : Colors.green),
+                      color: p.severity == 'Critical' ? Colors.red : (p.severity == 'Moderate' ? Colors.orange : (p.severity == 'Minor' ? Colors.green : Colors.black87)),
                       fontWeight: FontWeight.bold
                     )),
                     onTap: () {
                       context.push('/patient/${p.id}');
                     },
                   ),
-                );
+                ).animate().fade(duration: 250.ms, delay: (50 * index).ms).slideX(begin: 0.1);
               },
             ),
         ),

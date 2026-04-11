@@ -24,4 +24,8 @@ Download and install the latest Android Version 1 directly from GitHub:
 - 📊 Dashboard & Daily Analytics
 - 📄 Secure PDF Medical Report Generation
 - 🔒 Secure On-Device Storage (Hive AES-256)
-- © Twirwaneho Technologies
+- © Zentra Technologies
+
+## 🌐 Web Platform
+
+Access the web platform at [Zentra Technologies](https://zentratechnologies.vercel.app/)

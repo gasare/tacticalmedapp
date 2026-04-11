@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/storage/hive_service.dart';
+import '../../../app.dart';
 import '../../auth/data/auth_service.dart';
 import '../domain/user_settings.dart';
 
@@ -155,6 +156,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 if (v != null) _roleController.text = v;
               },
               validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+            ),
+            const SizedBox(height: 24),
+            SwitchListTile(
+              title: const Text('Tactical Night Mode', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Preserve night vision with deep red filtering'),
+              secondary: const Icon(Icons.nightlight_round),
+              value: ref.watch(themeProvider) == ThemeMode.dark,
+              onChanged: (val) {
+                ref.read(themeProvider.notifier).state = val ? ThemeMode.dark : ThemeMode.light;
+              },
+              activeTrackColor: Colors.red.withValues(alpha: 0.5),
+              activeThumbColor: Colors.red,
             ),
             const SizedBox(height: 40),
             

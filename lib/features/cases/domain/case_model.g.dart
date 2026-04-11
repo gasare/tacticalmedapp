@@ -23,13 +23,14 @@ class CaseRecordAdapter extends TypeAdapter<CaseRecord> {
       description: fields[3] as String,
       timestamp: fields[4] as DateTime,
       providerName: fields[5] as String?,
+      isSynced: fields[6] == null ? false : fields[6] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, CaseRecord obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -41,7 +42,9 @@ class CaseRecordAdapter extends TypeAdapter<CaseRecord> {
       ..writeByte(4)
       ..write(obj.timestamp)
       ..writeByte(5)
-      ..write(obj.providerName);
+      ..write(obj.providerName)
+      ..writeByte(6)
+      ..write(obj.isSynced);
   }
 
   @override

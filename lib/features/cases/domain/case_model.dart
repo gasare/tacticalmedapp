@@ -22,6 +22,9 @@ class CaseRecord {
   @HiveField(5)
   final String? providerName;
 
+  @HiveField(6, defaultValue: false)
+  final bool isSynced;
+
   CaseRecord({
     required this.id,
     required this.patientId,
@@ -29,5 +32,6 @@ class CaseRecord {
     required this.description,
     required this.timestamp,
     this.providerName,
+    this.isSynced = false,
   });
 }

@@ -33,29 +33,47 @@ class HiveService {
     }
 
     // Check if we have an encryption key stored securely
-    String? storedKey = await _secureStorage.read(key: _secureKey);
+    String? storedKey;
+    try {
+      storedKey = await _secureStorage.read(key: _secureKey);
+    } catch (e) {
+      await _secureStorage.deleteAll();
+      storedKey = null;
+    }
+
     List<int> encryptionKey;
 
     if (storedKey == null) {
-      // First run: generate a new 256-bit encryption key securely
       final secureKey = Hive.generateSecureKey();
-      await _secureStorage.write(key: _secureKey, value: base64UrlEncode(secureKey));
+      try {
+        await _secureStorage.write(key: _secureKey, value: base64UrlEncode(secureKey));
+      } catch (_) {}
       encryptionKey = secureKey;
     } else {
-      // Decode the stored key
-      encryptionKey = base64Url.decode(storedKey);
+      try {
+        encryptionKey = base64Url.decode(storedKey);
+      } catch (e) {
+        await _secureStorage.deleteAll();
+        final secureKey = Hive.generateSecureKey();
+        try {
+          await _secureStorage.write(key: _secureKey, value: base64UrlEncode(secureKey));
+        } catch (_) {}
+        encryptionKey = secureKey;
+      }
     }
 
     // Open encrypted boxes with AES-256
-    await Hive.openBox(patientsBoxName, encryptionCipher: HiveAesCipher(encryptionKey));
-    await Hive.openBox(casesBoxName, encryptionCipher: HiveAesCipher(encryptionKey));
-    
+    await Hive.openBox(patientsBoxName,
+        encryptionCipher: HiveAesCipher(encryptionKey));
+    await Hive.openBox(casesBoxName,
+        encryptionCipher: HiveAesCipher(encryptionKey));
+
     // Auth box without heavy encryption for initial fast PIN verification
     await Hive.openBox(authBoxName);
-    
+
     // Accounts box for multi-user authentication
     await Hive.openBox(accountsBoxName);
-    
+
     // Settings box for medic profile
     await Hive.openBox(settingsBoxName);
   }

@@ -9,30 +9,14 @@ class AuthService {
   final HiveService _hiveService;
   final LocalAuthentication _localAuth;
 
-  AuthService(this._hiveService, this._localAuth) {
-    _bootstrapAdmin();
-  }
-
-  void _bootstrapAdmin() {
-    final box = _hiveService.accountsBox;
-    if (!box.containsKey('admin')) {
-      final bytes = utf8.encode('admin_password');
-      final hashedPin = sha256.convert(bytes).toString();
-      final adminAccount = UserAccount(
-        username: 'admin',
-        hashedPassword: hashedPin,
-        isAdmin: true,
-      );
-      box.put('admin', adminAccount);
-    }
-  }
+  AuthService(this._hiveService, this._localAuth);
 
   String _hashPassword(String password) {
     final bytes = utf8.encode(password);
     return sha256.convert(bytes).toString();
   }
 
-  Future<bool> signUp(String username, String password, bool enableBiometrics) async {
+  Future<bool> signUp(String username, String password, bool enableBiometrics, {String firstName = '', String lastName = '', String phoneNumber = ''}) async {
     final box = _hiveService.accountsBox;
     if (box.containsKey(username)) return false; // Username taken
 
@@ -40,6 +24,9 @@ class AuthService {
       username: username,
       hashedPassword: _hashPassword(password),
       biometricsEnabled: enableBiometrics,
+      firstName: firstName,
+      lastName: lastName,
+      phoneNumber: phoneNumber,
     );
     await box.put(username, account);
     await _hiveService.authBox.put('last_logged_in_user', username);

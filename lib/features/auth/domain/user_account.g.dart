@@ -21,13 +21,16 @@ class UserAccountAdapter extends TypeAdapter<UserAccount> {
       hashedPassword: fields[1] as String,
       isAdmin: fields[2] as bool,
       biometricsEnabled: fields[3] as bool,
+      firstName: fields[4] == null ? '' : fields[4] as String,
+      lastName: fields[5] == null ? '' : fields[5] as String,
+      phoneNumber: fields[6] == null ? '' : fields[6] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserAccount obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.username)
       ..writeByte(1)
@@ -35,7 +38,13 @@ class UserAccountAdapter extends TypeAdapter<UserAccount> {
       ..writeByte(2)
       ..write(obj.isAdmin)
       ..writeByte(3)
-      ..write(obj.biometricsEnabled);
+      ..write(obj.biometricsEnabled)
+      ..writeByte(4)
+      ..write(obj.firstName)
+      ..writeByte(5)
+      ..write(obj.lastName)
+      ..writeByte(6)
+      ..write(obj.phoneNumber);
   }
 
   @override

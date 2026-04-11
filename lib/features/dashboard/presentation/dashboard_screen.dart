@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:async';
-import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../../core/network/sync_service.dart';
 import 'widgets/stat_card.dart';
 import '../../../core/storage/hive_service.dart';
-import '../../../core/network/sync_service.dart';
 import '../../patients/domain/patient_model.dart';
 import 'package:intl/intl.dart';
 
@@ -19,30 +18,17 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   List<Patient> _patients = [];
-  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
 
   @override
   void initState() {
     super.initState();
     _loadData();
-    _setupAutoSync();
-  }
-
-  void _setupAutoSync() {
-    _connectivitySubscription = Connectivity()
-        .onConnectivityChanged
-        .listen((List<ConnectivityResult> results) async {
-      final hasInternet = results.any((r) => r != ConnectivityResult.none);
-      if (hasInternet && _patients.any((p) => !p.isSynced)) {
-        await ref.read(syncServiceProvider).syncOfflinePatients();
-        if (mounted) _loadData();
-      }
-    });
+    // Cloud auto-sync is globally managed by SyncService inside app.dart
   }
 
   @override
   void dispose() {
-    _connectivitySubscription?.cancel();
     super.dispose();
   }
 
@@ -64,8 +50,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final moderatePatients =
         _patients.where((p) => p.severity == 'Moderate').length;
     final minorPatients = _patients.where((p) => p.severity == 'Minor').length;
+    final expectantPatients = _patients.where((p) => p.severity == 'Expectant').length;
     final criticalList =
         _patients.where((p) => p.severity == 'Critical').toList();
+
+    Color getTriageColor(String severity) {
+      switch (severity) {
+        case 'Critical': return Colors.red;
+        case 'Moderate': return Colors.orange;
+        case 'Minor': return Colors.green;
+        case 'Expectant': return Colors.black87;
+        default: return Colors.grey;
+      }
+    }
 
     // Chart Data
     final now = DateTime.now();
@@ -92,10 +89,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         title: const Text('Patients Dashboard'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Settings',
+            icon: const Icon(Icons.sync),
+            tooltip: 'Force Cloud Sync',
+            onPressed: () async {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Syncing to Command HQ...')));
+              await ref.read(syncServiceProvider).syncAllData();
+              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sync Complete!')));
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            tooltip: 'Receive QR Transfer',
             onPressed: () {
-              context.push('/settings');
+              context.push('/scanner');
             },
           ),
           Padding(
@@ -115,22 +121,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.search),
-            tooltip: 'Search Patients',
-            onPressed: () {
-              context.push('/search'); // Will implement next
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_add),
-            tooltip: 'Register Patient',
-            onPressed: () async {
-              await context.push('/register');
-              if (!context.mounted) return;
-              _loadData();
-            },
-          )
         ],
       ),
       body: RefreshIndicator(
@@ -167,11 +157,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           value: criticalPatients.toString(),
                           icon: Icons.warning_rounded,
                           color: Theme.of(context).colorScheme.error,
-                          onTap: () => context.push('/search'),
+                          onTap: () => context.push('/search?filter=Critical'),
                         ),
                       ),
                     ],
-                  ),
+                  ).animate().fade(duration: 400.ms).slideY(begin: 0.2),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -181,7 +171,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           value: moderatePatients.toString(),
                           icon: Icons.warning_amber_rounded,
                           color: Colors.orange,
-                          onTap: () => context.push('/search'),
+                          onTap: () => context.push('/search?filter=Moderate'),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -191,11 +181,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           value: minorPatients.toString(),
                           icon: Icons.healing,
                           color: Colors.green,
-                          onTap: () => context.push('/search'),
+                          onTap: () => context.push('/search?filter=Minor'),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: StatCard(
+                          title: 'Expectant',
+                          value: expectantPatients.toString(),
+                          icon: Icons.bed_rounded,
+                          color: Colors.black87,
+                          onTap: () => context.push('/search?filter=Expectant'),
                         ),
                       ),
                     ],
-                  ),
+                  ).animate().fade(duration: 400.ms, delay: 100.ms).slideY(begin: 0.2),
                   const SizedBox(height: 32),
                   Text('Patient Load',
                       style: Theme.of(context).textTheme.headlineMedium),
@@ -337,11 +337,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 children: [
                                   Text(p.severity,
                                       style: TextStyle(
-                                          color: p.severity == 'Critical'
-                                              ? Colors.red
-                                              : (p.severity == 'Moderate'
-                                                  ? Colors.orange
-                                                  : Colors.green),
+                                          color: getTriageColor(p.severity),
                                           fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 4),
                                   Icon(
@@ -366,7 +362,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 40.0),
                       child: Text(
-                        '© Twirwaneho Technologies',
+                        '© Zentra Technologies',
                         style: TextStyle(
                           color: Theme.of(context)
                               .colorScheme
@@ -382,15 +378,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await context.push('/register');
-          _loadData();
-        },
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
       ),
     );
   }

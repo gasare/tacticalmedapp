@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../core/storage/hive_service.dart';
 import '../domain/patient_model.dart';
 
@@ -60,6 +61,20 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   void _savePatient() async {
     if (_formKey.currentState!.validate()) {
       try {
+        Position? position;
+        try {
+          bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+          if (serviceEnabled) {
+            LocationPermission permission = await Geolocator.checkPermission();
+            if (permission == LocationPermission.denied) {
+              permission = await Geolocator.requestPermission();
+            }
+            if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+              position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+            }
+          }
+        } catch (_) {}
+
         final newPatient = Patient(
           id: const Uuid().v4(),
           name: _nameController.text,
@@ -72,6 +87,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
           severity: _severity,
           base64Photo: _photoBase64,
           base64WoundPhoto: _woundPhotoBase64,
+          gpsLocation: position != null ? '${position.latitude}, ${position.longitude}' : null,
         );
 
         final hiveService = ref.read(hiveServiceProvider);
@@ -311,9 +327,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                               border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide.none)),
-                          items: ['Minor', 'Moderate', 'Critical']
+                          items: ['Minor (Green)', 'Moderate (Yellow)', 'Critical (Red)', 'Expectant (Black)']
                               .map((s) =>
-                                  DropdownMenuItem(value: s, child: Text(s)))
+                                  DropdownMenuItem(value: s.split(' ')[0], child: Text(s)))
                               .toList(),
                           onChanged: (val) => setState(() => _severity = val!),
                         ),
