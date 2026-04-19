@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/storage/hive_service.dart';
 import '../domain/patient_model.dart';
+import '../../dashboard/presentation/main_screen.dart';
 
 class RegistrationScreen extends ConsumerStatefulWidget {
   const RegistrationScreen({super.key});
@@ -25,6 +26,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
 
   String _gender = 'Male';
   String _severity = 'Minor';
+
+  bool _isSaving = false;
 
   String? _photoBase64;
   String? _woundPhotoBase64;
@@ -59,7 +62,10 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   }
 
   void _savePatient() async {
+    if (_isSaving) return;
+    
     if (_formKey.currentState!.validate()) {
+      setState(() => _isSaving = true);
       try {
         Position? position;
         try {
@@ -98,13 +104,31 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
             const SnackBar(
                 content: Text('Patient registered securely offline')),
           );
-          context.go('/'); // Return distinctly to dashboard root
+          // Return distinctly to dashboard root
+          ref.read(mainTabProvider.notifier).state = 0;
+          
+          // Clear inputs
+          _nameController.clear();
+          _ageController.clear();
+          _unitController.clear();
+          _injuriesController.clear();
+          _historyController.clear();
+          setState(() {
+             _photoBase64 = null;
+             _woundPhotoBase64 = null;
+             _gender = 'Male';
+             _severity = 'Minor';
+          });
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error saving patient: $e')),
           );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isSaving = false);
         }
       }
     }
@@ -379,12 +403,14 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: FilledButton.icon(
-            onPressed: _savePatient,
-            icon: const Icon(Icons.save),
-            label: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: Text('SAVE PATIENT RECORD',
-                  style: TextStyle(
+            onPressed: _isSaving ? null : _savePatient,
+            icon: _isSaving 
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Icon(Icons.save),
+            label: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Text(_isSaving ? 'SAVING...' : 'SAVE PATIENT RECORD',
+                  style: const TextStyle(
                       fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
             ),
           ),

@@ -7,14 +7,19 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:hive/hive.dart';
 import '../../../core/storage/hive_service.dart';
-import '../../settings/domain/user_settings.dart';
+import '../../auth/domain/user_account.dart';
 import '../domain/patient_model.dart';
 import '../../cases/domain/case_model.dart';
 
 class PdfService {
   static Future<void> generateAndSharePatientReport(Patient patient) async {
-    final settingsBox = Hive.box(HiveService.settingsBoxName);
-    final UserSettings? medic = settingsBox.get('medic_profile');
+    final authBox = Hive.box(HiveService.authBoxName);
+    final username = authBox.get('last_logged_in_user');
+    UserAccount? medic;
+    if (username != null) {
+      final accountsBox = Hive.box(HiveService.accountsBoxName);
+      medic = accountsBox.get(username);
+    }
     
     // Fetch cases for timeline
     final casesBox = Hive.box<CaseRecord>(HiveService.casesBoxName);
@@ -167,7 +172,7 @@ class PdfService {
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        pw.Text('NAME: ${medic.rank} ${medic.providerName}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                        pw.Text('NAME: ${medic.rank} ${medic.firstName} ${medic.lastName}'.trim(), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
                         pw.Text('UNIT: ${medic.role} - ${medic.unit}', style: const pw.TextStyle(fontSize: 10)),
                       ]
                     )

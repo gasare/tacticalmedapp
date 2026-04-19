@@ -5,15 +5,14 @@ import '../../patients/presentation/search_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
 import 'dashboard_screen.dart';
 
-class MainScreen extends ConsumerStatefulWidget {
+final mainTabProvider = StateProvider<int>((ref) => 0);
+
+class MainScreen extends ConsumerWidget {
   const MainScreen({super.key});
 
   @override
-  ConsumerState<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends ConsumerState<MainScreen> {
-  int _currentIndex = 0;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final _currentIndex = ref.watch(mainTabProvider);
 
   final List<Widget> _screens = [
     const DashboardScreen(),
@@ -22,8 +21,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     const SettingsScreen(),
   ];
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -41,9 +38,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
+            ref.read(mainTabProvider.notifier).state = index;
           },
           type: BottomNavigationBarType.fixed,
           elevation: 0,

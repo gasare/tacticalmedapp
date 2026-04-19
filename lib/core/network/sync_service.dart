@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/storage/hive_service.dart';
 import '../../features/patients/domain/patient_model.dart';
 import '../../features/cases/domain/case_model.dart';
+import '../../features/auth/domain/user_account.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
 
@@ -11,9 +12,43 @@ class SyncService {
   final HiveService _hiveService;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   StreamSubscription? _subscription;
+  StreamSubscription? _usersSubscription;
 
   SyncService(this._hiveService) {
     _initConnectivityListener();
+    _initUsersListener();
+  }
+
+  void _initUsersListener() {
+    _usersSubscription = _firestore.collection('users').snapshots().listen((snapshot) {
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final username = doc.id;
+        final localUser = _hiveService.accountsBox.get(username) as UserAccount?;
+        
+        if (localUser != null) {
+          // Allow cloud to overwrite profile identity if modified by an Admin
+          final updated = UserAccount(
+             username: localUser.username,
+             hashedPassword: localUser.hashedPassword,
+             isAdmin: localUser.isAdmin,
+             biometricsEnabled: localUser.biometricsEnabled,
+             firstName: data['firstName'] ?? localUser.firstName,
+             lastName: data['lastName'] ?? localUser.lastName,
+             phoneNumber: data['phoneNumber'] ?? localUser.phoneNumber,
+             isApproved: data['isApproved'] ?? localUser.isApproved,
+             rank: data['rank'] ?? localUser.rank,
+             unit: data['unit'] ?? localUser.unit,
+             role: data['role'] ?? localUser.role,
+             identificationType: data['identificationType'] ?? localUser.identificationType,
+             profilePhotoBase64: data['profilePhotoBase64'] ?? localUser.profilePhotoBase64,
+             isSynced: true,
+          );
+          // Only perform Hive write if data actually changed to avoid loop
+          _hiveService.accountsBox.put(username, updated);
+        }
+      }
+    });
   }
 
   void _initConnectivityListener() {
@@ -96,6 +131,50 @@ class SyncService {
           await _hiveService.casesBox.put(c.id, updatedCase);
         }
       }
+
+      // 3. Sync User Accounts
+      final accounts = _hiveService.accountsBox.values.cast<UserAccount>();
+      for (final a in accounts) {
+        if (!a.isSynced) {
+          final docRef = _firestore.collection('users').doc(a.username);
+          final payload = {
+            'username': a.username,
+            'firstName': a.firstName,
+            'lastName': a.lastName,
+            'phoneNumber': a.phoneNumber,
+            'isAdmin': a.isAdmin,
+            'isApproved': a.isApproved,
+            'biometricsEnabled': a.biometricsEnabled,
+            'rank': a.rank,
+            'unit': a.unit,
+            'role': a.role,
+            'identificationType': a.identificationType,
+            'profilePhotoBase64': a.profilePhotoBase64,
+            'syncedAt': FieldValue.serverTimestamp(),
+          };
+          
+          await docRef.set(payload, SetOptions(merge: true));
+          
+          final updatedAccount = UserAccount(
+            username: a.username,
+            hashedPassword: a.hashedPassword,
+            isAdmin: a.isAdmin,
+            biometricsEnabled: a.biometricsEnabled,
+            firstName: a.firstName,
+            lastName: a.lastName,
+            phoneNumber: a.phoneNumber,
+            isApproved: a.isApproved,
+            rank: a.rank,
+            unit: a.unit,
+            role: a.role,
+            identificationType: a.identificationType,
+            profilePhotoBase64: a.profilePhotoBase64,
+            isSynced: true,
+          );
+          await _hiveService.accountsBox.put(a.username, updatedAccount);
+        }
+      }
+
       developer.log('Sync Complete.', name: 'SyncService');
     } catch (e) {
       developer.log('Network error during sync: $e', name: 'SyncService');
@@ -104,6 +183,7 @@ class SyncService {
 
   void dispose() {
     _subscription?.cancel();
+    _usersSubscription?.cancel();
   }
 }
 

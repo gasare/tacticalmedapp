@@ -1,4 +1,4 @@
-package com.tcom.app.tcom
+package com.tms.app
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

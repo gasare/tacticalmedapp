@@ -25,6 +25,27 @@ class UserAccount {
   @HiveField(6, defaultValue: '')
   final String phoneNumber;
 
+  @HiveField(7, defaultValue: false)
+  final bool isApproved;
+
+  @HiveField(8, defaultValue: false)
+  final bool isSynced;
+
+  @HiveField(9, defaultValue: '')
+  final String profilePhotoBase64;
+
+  @HiveField(10, defaultValue: 'Soldier')
+  final String identificationType;
+
+  @HiveField(11, defaultValue: '')
+  final String rank;
+
+  @HiveField(12, defaultValue: '')
+  final String unit;
+
+  @HiveField(13, defaultValue: '')
+  final String role;
+
   UserAccount({
     required this.username,
     required this.hashedPassword,
@@ -33,5 +54,12 @@ class UserAccount {
     this.firstName = '',
     this.lastName = '',
     this.phoneNumber = '',
+    this.isApproved = false,
+    this.isSynced = false,
+    this.profilePhotoBase64 = '',
+    this.identificationType = 'Soldier',
+    this.rank = '',
+    this.unit = '',
+    this.role = '',
   });
 }

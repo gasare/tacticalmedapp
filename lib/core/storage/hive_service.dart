@@ -4,7 +4,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/patients/domain/patient_model.dart';
 import '../../features/cases/domain/case_model.dart';
-import '../../features/settings/domain/user_settings.dart';
 import '../../features/auth/domain/user_account.dart';
 
 class HiveService {
@@ -24,9 +23,6 @@ class HiveService {
     }
     if (!Hive.isAdapterRegistered(1)) {
       Hive.registerAdapter(CaseRecordAdapter());
-    }
-    if (!Hive.isAdapterRegistered(2)) {
-      Hive.registerAdapter(UserSettingsAdapter());
     }
     if (!Hive.isAdapterRegistered(3)) {
       Hive.registerAdapter(UserAccountAdapter());

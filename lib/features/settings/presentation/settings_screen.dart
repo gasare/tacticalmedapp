@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/storage/hive_service.dart';
 import '../../../app.dart';
 import '../../auth/data/auth_service.dart';
-import '../domain/user_settings.dart';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
+import '../../auth/domain/user_account.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -20,6 +22,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _unitController = TextEditingController();
   final _roleController = TextEditingController();
 
+  String? _profilePhotoBase64;
+  String _identificationType = 'Soldier';
+
   @override
   void initState() {
     super.initState();
@@ -27,38 +32,59 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _loadSettings() {
-    final hiveService = ref.read(hiveServiceProvider);
     final currentUser = ref.read(authServiceProvider).getCurrentUser();
 
-    final box = hiveService.settingsBox;
-    if (box.isNotEmpty) {
-      final UserSettings? settings = box.get('medic_profile');
-      if (settings != null) {
-        _nameController.text = settings.providerName;
-        _rankController.text = settings.rank;
-        _unitController.text = settings.unit;
-        _roleController.text = settings.role;
-      }
+    if (currentUser != null) {
+      _nameController.text = "${currentUser.firstName} ${currentUser.lastName}".trim();
+      if (_nameController.text.isEmpty) _nameController.text = currentUser.username;
+      
+      _rankController.text = currentUser.rank;
+      _unitController.text = currentUser.unit;
+      _roleController.text = currentUser.role;
+      _identificationType = currentUser.identificationType.isEmpty ? 'Soldier' : currentUser.identificationType;
+      _profilePhotoBase64 = currentUser.profilePhotoBase64;
     }
+  }
 
-    // Default to the authentication username if no settings are saved
-    if (_nameController.text.isEmpty && currentUser != null) {
-      _nameController.text = currentUser.username;
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      setState(() {
+        _profilePhotoBase64 = base64Encode(bytes);
+      });
     }
   }
 
   void _saveSettings() {
     if (_formKey.currentState!.validate()) {
       final hiveService = ref.read(hiveServiceProvider);
+      final currentUser = ref.read(authServiceProvider).getCurrentUser();
+      if (currentUser == null) return;
       
-      final settings = UserSettings(
-        providerName: _nameController.text.trim(),
+      final parts = _nameController.text.trim().split(' ');
+      final first = parts.isNotEmpty ? parts.first : '';
+      final last = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+      
+      final updatedUser = UserAccount(
+        username: currentUser.username,
+        hashedPassword: currentUser.hashedPassword,
+        isAdmin: currentUser.isAdmin,
+        biometricsEnabled: currentUser.biometricsEnabled,
+        isApproved: currentUser.isApproved,
+        firstName: first,
+        lastName: last,
+        phoneNumber: currentUser.phoneNumber,
         rank: _rankController.text.trim(),
         unit: _unitController.text.trim(),
         role: _roleController.text.trim(),
+        identificationType: _identificationType,
+        profilePhotoBase64: _profilePhotoBase64 ?? '',
+        isSynced: false,
       );
 
-      hiveService.settingsBox.put('medic_profile', settings);
+      hiveService.accountsBox.put(currentUser.username, updatedUser);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -105,7 +131,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               style: TextStyle(color: Colors.grey),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+
+            GestureDetector(
+              onTap: _pickImage,
+              child: CircleAvatar(
+                radius: 50,
+                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                backgroundImage: _profilePhotoBase64 != null && _profilePhotoBase64!.isNotEmpty
+                    ? MemoryImage(base64Decode(_profilePhotoBase64!))
+                    : null,
+                child: _profilePhotoBase64 == null || _profilePhotoBase64!.isEmpty
+                    ? const Icon(Icons.add_a_photo, size: 40)
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _identificationType,
+              decoration: const InputDecoration(
+                labelText: 'Identification Type',
+                prefixIcon: Icon(Icons.badge),
+              ),
+              items: ['Soldier', 'Civilian']
+                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) setState(() { _identificationType = v; });
+              },
+            ),
+            const SizedBox(height: 16),
             
             TextFormField(
               controller: _nameController,

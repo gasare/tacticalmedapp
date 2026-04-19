@@ -10,6 +10,7 @@ import '../domain/patient_model.dart';
 import '../../cases/domain/case_model.dart';
 import '../../../core/storage/hive_service.dart';
 import '../data/pdf_service.dart';
+import 'package:go_router/go_router.dart';
 
 class PatientDetailScreen extends ConsumerStatefulWidget {
   final String patientId;
@@ -199,6 +200,79 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
     );
   }
 
+  void _showEditDialog() {
+    final severityController = TextEditingController(text: _patient!.severity);
+    final injuriesController = TextEditingController(text: _patient!.injuries);
+    final historyController = TextEditingController(text: _patient!.medicalHistory);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16, top: 16),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Edit Clinical Details', style: Theme.of(ctx).textTheme.titleLarge),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: severityController.text,
+                decoration: const InputDecoration(labelText: 'Severity'),
+                items: ['Minor', 'Moderate', 'Critical', 'Expectant']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (val) => severityController.text = val!,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: injuriesController,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Injuries'),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: historyController,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Medical History'),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: FilledButton(
+                   onPressed: () async {
+                      final updatedPatient = Patient(
+                         id: _patient!.id,
+                         name: _patient!.name,
+                         age: _patient!.age,
+                         gender: _patient!.gender,
+                         unit: _patient!.unit,
+                         injuries: injuriesController.text,
+                         medicalHistory: historyController.text,
+                         registeredAt: _patient!.registeredAt,
+                         severity: severityController.text,
+                         base64Photo: _patient!.base64Photo,
+                         base64WoundPhoto: _patient!.base64WoundPhoto,
+                         gpsLocation: _patient!.gpsLocation,
+                      );
+                      final hiveService = ref.read(hiveServiceProvider);
+                      await hiveService.patientsBox.put(updatedPatient.id, updatedPatient);
+                      if (context.mounted) Navigator.pop(ctx);
+                      _loadData();
+                   },
+                   child: const Text('SAVE CHANGES')
+                ),
+              ),
+              const SizedBox(height: 16),
+            ]
+          )
+        )
+      )
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_patient == null) {
@@ -228,7 +302,38 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {},
+            tooltip: 'Edit Details',
+            onPressed: _showEditDialog,
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            tooltip: 'Delete Patient',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Delete Patient?'),
+                  content: const Text('Are you sure you want to permanently delete this patient record and all cases?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('CANCEL')),
+                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('DELETE', style: TextStyle(color: Colors.red))),
+                  ],
+                )
+              );
+              if (confirm == true) {
+                final hiveService = ref.read(hiveServiceProvider);
+                await hiveService.patientsBox.delete(_patient!.id);
+                // Also delete related cases
+                final caseIdsToDelete = hiveService.casesBox.values
+                    .map((e) => e as CaseRecord)
+                    .where((c) => c.patientId == _patient!.id)
+                    .map((c) => c.id)
+                    .toList();
+                await hiveService.casesBox.deleteAll(caseIdsToDelete);
+                
+                if (mounted) context.pop();
+              }
+            },
           )
         ],
       ),
@@ -242,8 +347,11 @@ class _PatientDetailScreenState extends ConsumerState<PatientDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 16.0,
+                      runSpacing: 8.0,
                       children: [
                         Text('Severity: ${_patient!.severity}',
                             style: Theme.of(context)

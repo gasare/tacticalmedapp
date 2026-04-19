@@ -7,6 +7,7 @@ import '../../../core/network/sync_service.dart';
 import 'widgets/stat_card.dart';
 import '../../../core/storage/hive_service.dart';
 import '../../patients/domain/patient_model.dart';
+import '../../cases/domain/case_model.dart';
 import 'package:intl/intl.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -18,6 +19,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   List<Patient> _patients = [];
+  List<CaseRecord> _cases = [];
 
 
   @override
@@ -39,6 +41,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           .map((e) => e as Patient)
           .toList()
         ..sort((a, b) => b.registeredAt.compareTo(a.registeredAt));
+      _cases = hiveService.casesBox.values.map((e) => e as CaseRecord).toList();
     });
   }
 
@@ -53,6 +56,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final expectantPatients = _patients.where((p) => p.severity == 'Expectant').length;
     final criticalList =
         _patients.where((p) => p.severity == 'Critical').toList();
+        
+    final twentyFourHoursAgo = DateTime.now().subtract(const Duration(hours: 24));
+    final casualitiesLast24h = _patients.where((p) => p.registeredAt.isAfter(twentyFourHoursAgo)).length;
+    
+    // Average Time Triage-to-Clearance
+    Duration totalTime = Duration.zero;
+    int resolvedPatientsCount = 0;
+    
+    for (var p in _patients) {
+      final pCases = _cases.where((c) => c.patientId == p.id).toList();
+      if (pCases.isEmpty) continue;
+      pCases.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      final lastCaseTime = pCases.first.timestamp;
+      
+      final lifespan = lastCaseTime.difference(p.registeredAt);
+      if (lifespan.inMinutes > 0) {
+         totalTime += lifespan;
+         resolvedPatientsCount++;
+      }
+    }
+    
+    String avgTimeText = '0 min';
+    if (resolvedPatientsCount > 0) {
+      final avgMinutes = totalTime.inMinutes ~/ resolvedPatientsCount;
+      if (avgMinutes >= 60) {
+         final h = avgMinutes ~/ 60;
+         final m = avgMinutes % 60;
+         avgTimeText = '${h}h ${m}m';
+      } else {
+         avgTimeText = '${avgMinutes}m';
+      }
+    }
 
     Color getTriageColor(String severity) {
       switch (severity) {
@@ -196,6 +231,76 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     ],
                   ).animate().fade(duration: 400.ms, delay: 100.ms).slideY(begin: 0.2),
+                  const SizedBox(height: 32),
+                  Text('Advanced Command Analytics',
+                      style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: StatCard(
+                          title: 'Last 24h',
+                          value: casualitiesLast24h.toString(),
+                          icon: Icons.access_time_filled,
+                          color: Colors.blueAccent,
+                          onTap: () {},
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: StatCard(
+                          title: 'Avg TT Evac',
+                          value: avgTimeText,
+                          icon: Icons.timer,
+                          color: Colors.purpleAccent,
+                          onTap: () {},
+                        ),
+                      ),
+                    ]
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 200,
+                    child: Card(
+                       elevation: 2,
+                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                       child: Padding(
+                         padding: const EdgeInsets.all(16.0),
+                         child: Row(
+                           children: [
+                             Expanded(
+                               child: PieChart(
+                                 PieChartData(
+                                   sectionsSpace: 2,
+                                   centerSpaceRadius: 25,
+                                   sections: [
+                                     if(criticalPatients > 0) PieChartSectionData(color: Colors.red, value: criticalPatients.toDouble(), title: '$criticalPatients', radius: 40, titleStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                     if(moderatePatients > 0) PieChartSectionData(color: Colors.orange, value: moderatePatients.toDouble(), title: '$moderatePatients', radius: 40, titleStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                     if(minorPatients > 0) PieChartSectionData(color: Colors.green, value: minorPatients.toDouble(), title: '$minorPatients', radius: 40, titleStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                     if(expectantPatients > 0) PieChartSectionData(color: Colors.black87, value: expectantPatients.toDouble(), title: '$expectantPatients', radius: 40, titleStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                                   ]
+                                 )
+                               )
+                             ),
+                             const SizedBox(width: 16),
+                             Column(
+                               mainAxisAlignment: MainAxisAlignment.center,
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                  Row(children: [const Icon(Icons.circle, color: Colors.red, size: 12), const SizedBox(width: 8), const Text('Critical')]),
+                                  const SizedBox(height: 4),
+                                  Row(children: [const Icon(Icons.circle, color: Colors.orange, size: 12), const SizedBox(width: 8), const Text('Moderate')]),
+                                  const SizedBox(height: 4),
+                                  Row(children: [const Icon(Icons.circle, color: Colors.green, size: 12), const SizedBox(width: 8), const Text('Minor')]),
+                                  const SizedBox(height: 4),
+                                  Row(children: [const Icon(Icons.circle, color: Colors.black87, size: 12), const SizedBox(width: 8), const Text('Expectant')]),
+                               ]
+                             )
+                           ]
+                         )
+                       )
+                    )
+                  ),
                   const SizedBox(height: 32),
                   Text('Patient Load',
                       style: Theme.of(context).textTheme.headlineMedium),

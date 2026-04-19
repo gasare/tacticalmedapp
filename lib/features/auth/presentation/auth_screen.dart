@@ -19,7 +19,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   // New Fields
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  final _phoneController = TextEditingController();
   
   bool _isLogin = true;
   bool _isLoading = false;
@@ -55,115 +54,42 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final password = _passwordController.text;
 
     if (_isLogin) {
-      final success = await authService.login(username, password);
-      if (success && mounted) {
-        context.go('/');
-      } else {
+      try {
+        await authService.login(username, password);
+        
+        final user = authService.getCurrentUser();
+        if (user != null && user.biometricsEnabled) {
+          final bioSuccess = await authService.authenticateWithBiometrics();
+          if (!bioSuccess) {
+            setState(() {
+              _errorMessage = 'Biometric authentication required.';
+              _isLoading = false;
+            });
+            // Immediately log them out locally if biometric fails
+            await authService.logout();
+            return;
+          }
+        }
+        
+        if (user != null && user.isAdmin) {
+          context.go('/admin');
+        } else {
+          context.go('/');
+        }
+      } catch (e) {
         setState(() {
-          _errorMessage = 'Invalid username or password.';
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
           _isLoading = false;
         });
       }
     } else {
-      // Registration: Trigger Firebase SMS flow
-      await _verifyPhoneNumber();
-    }
-  }
-
-  Future<void> _verifyPhoneNumber() async {
-    try {
-      await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: _phoneController.text.trim(),
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          await _linkUser(credential);
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          if (mounted) {
-            setState(() { 
-              _errorMessage = e.message ?? 'SMS Verification failed'; 
-              _isLoading = false; 
-            });
-          }
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          if (mounted) {
-            setState(() => _isLoading = false);
-            _showOtpDialog(verificationId);
-          }
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {},
-      );
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Failed to initiate phone verification. Check your phone number format (e.g. +1234567890).';
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  void _showOtpDialog(String verificationId) {
-    final otpController = TextEditingController();
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Enter SMS Verification Code'),
-        content: TextField(
-          controller: otpController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            hintText: '6-digit code',
-            prefixIcon: Icon(Icons.password),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() => _isLoading = false);
-            }, 
-            child: const Text('Cancel')
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              setState(() => _isLoading = true);
-              try {
-                final credential = PhoneAuthProvider.credential(
-                  verificationId: verificationId,
-                  smsCode: otpController.text.trim(),
-                );
-                await _linkUser(credential);
-              } catch (e) {
-                if (mounted) {
-                  setState(() { 
-                    _errorMessage = 'Invalid SMS Code provided.'; 
-                    _isLoading = false; 
-                  });
-                }
-              }
-            },
-            child: const Text('Verify'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _linkUser(PhoneAuthCredential credential) async {
-    try {
-      await FirebaseAuth.instance.signInWithCredential(credential);
-      // Firebase success, register user in local Hive DB
-      final authService = ref.read(authServiceProvider);
+      // Direct local registration avoiding Firebase blocking errors
       final success = await authService.signUp(
-        _usernameController.text.trim(),
-        _passwordController.text,
+        username,
+        password,
         _enableBiometrics,
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        phoneNumber: _phoneController.text.trim(),
       );
       if (success && mounted) {
         if (_enableBiometrics) {
@@ -174,20 +100,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       } else {
         if (mounted) {
           setState(() { 
-            _errorMessage = 'Username already taken or local registration failed.'; 
+            _errorMessage = 'Username already taken or registration failed.'; 
             _isLoading = false; 
           });
         }
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() { 
-          _errorMessage = e.toString(); 
-          _isLoading = false; 
-        });
-      }
     }
   }
+
+
 
   @override
   void dispose() {
@@ -195,7 +116,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     _passwordController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _phoneController.dispose();
     super.dispose();
   }
 
@@ -269,18 +189,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone Number (e.g. +1234567890)',
-                        prefixIcon: Icon(Icons.phone),
-                      ),
-                      validator: (v) => v!.isEmpty || !v.startsWith('+') 
-                          ? 'Valid Phone format (+xxx) required' 
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
                   ],
 
                   TextFormField(
@@ -330,33 +238,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     : Column(
                         children: [
                           if (_isLogin) ...[
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 56,
-                                    child: ElevatedButton(
-                                      onPressed: _submitForm,
-                                      child: const Text('SECURE LOGIN'),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                SizedBox(
-                                  height: 56,
-                                  width: 56,
-                                  child: ElevatedButton(
-                                    onPressed: _checkBiometrics,
-                                    style: ElevatedButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                                      foregroundColor: Theme.of(context).colorScheme.primary,
-                                      elevation: 0,
-                                    ),
-                                    child: const Icon(Icons.fingerprint, size: 32),
-                                  ),
-                                ),
-                              ],
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: ElevatedButton(
+                                onPressed: _submitForm,
+                                child: const Text('SECURE LOGIN'),
+                              ),
                             ),
                           ] else ...[
                             SizedBox(
